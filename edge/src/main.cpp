@@ -1,5 +1,5 @@
 /*
-OLIMEX ESP32-POE DV10 Ventilation → MQTT → QuestDB
+OLIMEX ESP32-POE DV10 Ventilation → MQTT → QuestDB (TLS ENABLED)
 FIXED COMPILER ERRORS - PlatformIO READY
 
 Commands:
@@ -9,14 +9,15 @@ r=Read a=AutoRead i=Interval m=Menu
 
 #include <ModbusMaster.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>  // ✅ TLS SUPPORT
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
 // ======================== FILL YOUR CREDENTIALS HERE ========================
-const char* ssid = "YOUR WIFI";
-const char* password = "YOUR WIFI PASS";
-const char* mqtt_server = "172.20.10.5"; //UPDATE TO HOST IP 
-const int mqtt_port = 1883;
+const char* ssid = "Decker (2)";
+const char* password = "1122334455";
+const char* mqtt_server = "172.20.10.5";
+const int mqtt_port = 8883;  // ✅ CHANGED: TLS port 8883 (was 1883)
 const char* mqtt_user = "edgeuser";
 const char* mqtt_password = "Optilogic25";
 
@@ -27,7 +28,31 @@ const char* device_id = "DV10";
 unsigned long autoReadInterval = 10000;  // 10 seconds
 // ============================================================================
 
-WiFiClient espClient;
+// ✅ PASTE YOUR CA CERTIFICATE HERE (from ~/iot-monitoring/mosquitto/config/certs/ca.crt)
+const char ca_cert[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDBzCCAe+gAwIBAgIUFJMw8pH7FXS7zJjv4LTLKUOKStQwDQYJKoZIhvcNAQEL
+BQAwEzERMA8GA1UEAwwITXlNUVRUQ0EwHhcNMjUwOTI0MDgzNDU0WhcNMjYwOTI0
+MDgzNDU0WjATMREwDwYDVQQDDAhNeU1RVFRDQTCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAKuUs8uE3c56haslXBmLMNyy59+Hm//XmpG8hrhM3ZUBcb/r
+ToasIfHbEzqeVwrH6hMgj4gn1E4m+agnQMkHTUnzrXN+jLXdd2hhc0wymf/CJtKc
+r6Y+VciQG5bAq+ju/coP38QInDTv3ww7Ud9spHuEU3skX/vjH3mCTXPcwqI51MJB
+BUqgc8rsjCaPDBEFGz2pU/iM6fw3RX0O19aqfwk2yHDiIAxeMcH1CyBJOzYDKES5
+7k5kRUB3YrLQmymaP13CS0kJ2RxLMRLxKlZAG6aNBWdtYh+FB03pxSkJeOg2QFEU
+y5wO8CbFHeMlAQ84gB3y5I1qWvRO+NFN+hh/knUCAwEAAaNTMFEwHQYDVR0OBBYE
+FLpkT6YAvgDMfAe0Pt01Ih0shnklMB8GA1UdIwQYMBaAFLpkT6YAvgDMfAe0Pt01
+Ih0shnklMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAJw2Dxck
+eRnosw/BMQPrmQz43Qhw8srFrTC5f4LsI9RWN8CcyX6oSeyH3sm3PBHyd8ipKGZR
+HqafCT31ju8SPhsd2FeRRh0GA/NRVV4mewTEoRoNfrZPWKiPVz+yhHHyBpTM2arm
+robRIsWMXdH98jB5zGV/bATquIRQfe7xUTSN2IP0tMDZhXwHmLY66hlOWwWu4pmx
+IKgyq1YPEwuW++fEGLkhLj/dHZ/6LWwQIDFV0ZoQ4GUyTHvENeFcdrWtDN+P7beB
+RRzwfdNSDV0FNfSV5q5bTLn3hUZwVyAmMAPvMWU9UBloGjjPRU/3C85i8vL7z9tj
+r6MVcPCBPPcsst0=
+-----END CERTIFICATE-----
+
+)EOF";
+
+WiFiClientSecure espClient;  // ✅ CHANGED: Secure client for TLS
 PubSubClient mqttClient(espClient);
 
 #define RX_PIN 36
@@ -87,7 +112,7 @@ void setupWiFi() {
 
 void reconnectMQTT() {
   while (!mqttClient.connected()) {
-    Serial.print("Connecting MQTT ");
+    Serial.print("Connecting MQTT (TLS) ");
     
     String clientId = String(edge_node_id) + "_" + String(random(0xffff), HEX);
     
@@ -98,7 +123,7 @@ void reconnectMQTT() {
       millis());
     
     if (mqttClient.connect(clientId.c_str(), mqtt_user, mqtt_password)) {
-      Serial.println("✓ MQTT connected");
+      Serial.println("✓ MQTT TLS connected");
       
       String nbirthTopic = "spBv1.0/" + String(group_id) + "/NBIRTH/" + edge_node_id;
       mqttClient.publish(nbirthTopic.c_str(), nbirthPayload);
@@ -182,7 +207,7 @@ void readAllSensors() {
   readRawReg(4, currentData.extractFanRuntime); success++;
   
   currentData.successfulReads = success;
-  currentData.dataValid = (success > 10);
+  currentData.dataValid = (success > 8);
   Serial.printf("✓ %d/%d sensors OK\n", success, 15);
 }
 
@@ -212,7 +237,7 @@ void publishData() {
   serializeJson(doc, payload);
   
   if (mqttClient.publish("sensors/OLIMEX_POE", payload.c_str())) {
-    Serial.println("✓ Data sent to QuestDB");
+    Serial.println("✓ Data sent to QuestDB (TLS)");
   } else {
     Serial.println("✗ Publish failed");
   }
@@ -232,7 +257,7 @@ void writeFanMode(uint16_t mode) {
 }
 
 void printMenu() {
-  Serial.println("\n=== DV10 CONTROLLER ===");
+  Serial.println("\n=== DV10 CONTROLLER (TLS MQTT) ===");
   Serial.println("0=Off 1=Reduced 2=Normal 3=Auto");
   Serial.println("r=Read a=AutoRead i=Interval m=Menu");
   Serial.printf("Auto: %s (%lus) | WiFi: %s | MQTT: %s\n",
@@ -281,7 +306,7 @@ void handleSerial() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("\n=== OLIMEX ESP32-POE → MQTT → QuestDB ===");
+  Serial.println("\n=== OLIMEX ESP32-POE → MQTT TLS → QuestDB ===");
   
   pinMode(MAX485_RE_NEG, OUTPUT);
   pinMode(MAX485_DE, OUTPUT);
@@ -293,10 +318,14 @@ void setup() {
   modbus.preTransmission(preTransmission);
   modbus.postTransmission(postTransmission);
   
+  setupWiFi();
+  
+  // ✅ CRITICAL: Set CA certificate for TLS verification
+  espClient.setCACert(ca_cert);
+  
   mqttClient.setServer(mqtt_server, mqtt_port);
   mqttClient.setBufferSize(2048);
   
-  setupWiFi();
   printMenu();
 }
 
@@ -321,5 +350,5 @@ void loop() {
     }
   }
   
-  delay(10);
+  delay(1000);
 }
