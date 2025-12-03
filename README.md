@@ -25,3 +25,27 @@ See `docs/network_topology.md` for a detailed topology diagram and `docs/depende
 cd ~/iot-monitoring
 docker-compose up -d
 ./quick_check.sh
+
+Backend API (Data for charts):
+
+cd ~/iot-monitoring/backend
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+Environment set up:
+source backend/venv/bin/activate
+
+Run py scripts:
+cd ~/iot-monitoring/backend
+python3 mqtt_ingestor.py
+python3 sparkplug_bridge.py
+
+Run webserver:
+cd ~/iot-monitoring/webserver
+python3 -m http.server 8001
+
+
+Unit test:
+python3 -m unittest discover backend/tests -v (run ALL tests)
+python3 -m unittest backend.tests.test_main -v (individual)
+python3 -m unittest backend.tests.test_mqtt_ingestor -v (individual)
+
