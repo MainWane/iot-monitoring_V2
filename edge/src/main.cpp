@@ -14,7 +14,7 @@ r=Read a=AutoRead i=Interval m=Menu
 #include <WiFi.h>
 #include <WiFiClientSecure.h>  // ✅ TLS SUPPORT
 #include <PubSubClient.h>
-#include <ArduinoJson.h>
+#include <ArduinoJson.h> //JSON Wrapper
 
 // ======================== FILL YOUR CREDENTIALS HERE ========================
 const char* ssid = "Decker (2)";
@@ -24,6 +24,7 @@ const int mqtt_port = 8883;  // ✅ CHANGED: TLS port 8883 (was 1883)
 const char* mqtt_user = "edgeuser";
 const char* mqtt_password = "Optilogic25";
 
+// Sparkplug B- name convention
 const char* group_id = "Ventilation";
 const char* edge_node_id = "OLIMEX_POE";
 const char* device_id = "DV10";
@@ -215,7 +216,7 @@ void readAllSensors() {
 }
 
 void publishData() {
-  if (!currentData.dataValid || !mqttClient.connected()) return;
+  if (!currentData.dataValid || !mqttClient.connected()) return; // sign ! means not that function. !currentData.dataValid means if data are not validated
   
   JsonDocument doc;
   doc["device_id"] = device_id;
