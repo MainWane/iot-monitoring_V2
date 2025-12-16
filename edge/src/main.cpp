@@ -307,18 +307,19 @@ void handleSerial() {
   }
 }
 
+/* Alt det her kører én gang når ESP32'eren startes eller restartes */
 void setup() {
-  Serial.begin(115200);  //serial comm. on ESP32 at baud rate per sec -data transmission and reception over USB port.
+  Serial.begin(115200);  // Starter en serial forbindelse på USB porten til debugging, overvågning eller eventuel logging. 
   delay(1000);
   Serial.println("\n=== OLIMEX ESP32-POE → MQTT TLS → QuestDB ===");
   
-  pinMode(MAX485_RE_NEG, OUTPUT);
-  pinMode(MAX485_DE, OUTPUT);
+  pinMode(MAX485_RE_NEG, OUTPUT); // RE = Receiver
+  pinMode(MAX485_DE, OUTPUT);  // DE = Driver
   digitalWrite(MAX485_RE_NEG, LOW);
   digitalWrite(MAX485_DE, LOW);
   
-  Serial2.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
-  modbus.begin(MODBUS_SLAVE_ID, Serial2);
+  Serial2.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN); // Starter en serial forbindelse på ESP32'erens UART2 - 8N1 = 8 Bits, None Parity, 1 Stopbit. 
+  modbus.begin(MODBUS_SLAVE_ID, Serial2); // Bruger Slave ID 1, kører Modbus traffik over ESP32'erens seriel forbindelse. 
   modbus.preTransmission(preTransmission);
   modbus.postTransmission(postTransmission);
   
