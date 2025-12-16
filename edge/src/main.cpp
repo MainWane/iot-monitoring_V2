@@ -308,7 +308,7 @@ void handleSerial() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200);  //serial comm. on ESP32 at baud rate per sec -data transmission and reception over USB port.
   delay(1000);
   Serial.println("\n=== OLIMEX ESP32-POE → MQTT TLS → QuestDB ===");
   
