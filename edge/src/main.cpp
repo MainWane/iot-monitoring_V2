@@ -1,26 +1,22 @@
 /*
-OLIMEX ESP32-POE DV10 Ventilation → MQTT → QuestDB (TLS ENABLED)
-PlatformIO READY
-
-This file contains the core setup() and loop() logic for the ESP32.
-It replaces the functionality of the previously suggested DV10_Controller.cpp.
+DV10 ModbusMaster for Olimex ESP32-PoE
 
 Commands:
 0=Off 1=Reduced 2=Normal 3=Auto
 r=Read a=AutoRead i=Interval m=Menu
 */
 
-#include <ModbusMaster.h>
-#include <WiFi.h>
-#include <WiFiClientSecure.h>  // ✅ TLS SUPPORT
-#include <PubSubClient.h>
+#include <ModbusMaster.h> // Modbus lib
+#include <WiFi.h> // Controls WiFi on the microcontroller
+#include <WiFiClientSecure.h>  // TLS SUPPORT
+#include <PubSubClient.h> // MQTT Publisher
 #include <ArduinoJson.h> //JSON Wrapper
 
-// ======================== FILL YOUR CREDENTIALS HERE ========================
-const char* ssid = "Decker (2)";
+// ======================== FILL CREDENTIALS HERE ========================
+const char* ssid = "Decker (2)"; // const char* = pointer to constant character
 const char* password = "1122334455";
 const char* mqtt_server = "172.20.10.5";
-const int mqtt_port = 8883;  // ✅ CHANGED: TLS port 8883 (was 1883)
+const int mqtt_port = 8883;  // TLS port 8883
 const char* mqtt_user = "edgeuser";
 const char* mqtt_password = "Optilogic25";
 
@@ -32,7 +28,7 @@ const char* device_id = "DV10";
 unsigned long autoReadInterval = 10000;  // 10 seconds
 // ============================================================================
 
-// ✅ PASTE YOUR CA CERTIFICATE HERE (from ~/iot-monitoring/mosquitto/config/certs/ca.crt)
+//  CA CERTIFICATE HERE (from ~/iot-monitoring/mosquitto/config/certs/ca.crt)
 const char ca_cert[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 MIIDBzCCAe+gAwIBAgIUFJMw8pH7FXS7zJjv4LTLKUOKStQwDQYJKoZIhvcNAQEL
@@ -59,6 +55,7 @@ r6MVcPCBPPcsst0=
 WiFiClientSecure espClient;  // Secure client for TLS
 PubSubClient mqttClient(espClient);
 
+// Macros
 #define RX_PIN 36
 #define TX_PIN 4
 #define MAX485_DE 5
@@ -70,6 +67,7 @@ ModbusMaster modbus;
 bool autoReadEnabled = true;
 unsigned long lastAutoRead = 0;
 
+// Data collection
 struct SensorData {
   float heatExchangerEfficiency;
   uint16_t runMode;
@@ -83,11 +81,13 @@ struct SensorData {
 };
 SensorData currentData = {0};
 
+// Pin 5 and 14 enables TX mode, Modbus Master writes Modbus Slave
 void preTransmission() {
   digitalWrite(MAX485_RE_NEG, HIGH);
   digitalWrite(MAX485_DE, HIGH);
 }
 
+//Pin 5 and 14 enables RX mode, Modbus Slave answers Modbus Master
 void postTransmission() {
   digitalWrite(MAX485_RE_NEG, LOW);
   digitalWrite(MAX485_DE, LOW);
@@ -325,7 +325,7 @@ void setup() {
   
   setupWiFi();
   
-  // ✅ CRITICAL: Set CA certificate for TLS verification
+  // CA certificate for TLS verification
   espClient.setCACert(ca_cert);
   
   mqttClient.setServer(mqtt_server, mqtt_port);
