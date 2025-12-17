@@ -186,14 +186,16 @@ bool readRawReg(uint16_t reg, uint16_t &value) {
 
 void readAllSensors() {
   Serial.println("\n=== READING SENSORS ===");
-  currentData.timestamp = millis();
+  currentData.timestamp = millis(); // millis() Returns the number of milliseconds since the device began running the current program.
   currentData.dataValid = false;
   int success = 0;
   
   if (readScaledReg(1, currentData.heatExchangerEfficiency)) success++;
   if (readRawReg(2, currentData.runMode)) success++;
   
-  readScaledReg(0, currentData.outdoorTemp); if (!isnan(currentData.outdoorTemp)) success++;
+  readScaledReg(0, currentData.outdoorTemp); if (!isnan(currentData.outdoorTemp)) success++; // the isnan template function returns true if the argument x is a Not a Number (NaN); otherwise it returns false 
+  readScaledReg(3, currentData.supplyFanRuntime); if (!isnan(currentData.supplyFanRuntime)) success++;
+  readScaledReg(4, currentData.extractFanRuntime); if (!isnan(currentData.extractFanRuntime)) success++;
   readScaledReg(6, currentData.supplyAirTemp); if (!isnan(currentData.supplyAirTemp)) success++;
   readScaledReg(7, currentData.supplyAirSetpointTemp); if (!isnan(currentData.supplyAirSetpointTemp)) success++;
   readScaledReg(8, currentData.exhaustAirTemp); if (!isnan(currentData.exhaustAirTemp)) success++;
@@ -207,8 +209,7 @@ void readAllSensors() {
   readScaledReg(292, currentData.extraSupplyAirFlow); if (!isnan(currentData.extraSupplyAirFlow)) success++;
   readScaledReg(293, currentData.extraExtractAirFlow); if (!isnan(currentData.extraExtractAirFlow)) success++;
   
-  readRawReg(3, currentData.supplyFanRuntime); success++;
-  readRawReg(4, currentData.extractFanRuntime); success++;
+
   
   currentData.successfulReads = success;
   currentData.dataValid = (success > 8);
