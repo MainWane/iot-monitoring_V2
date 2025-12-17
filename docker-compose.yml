@@ -4,8 +4,7 @@ services:
     container_name: mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
-      - "9001:9001"    # optional WebSocket
+      - "1883:1883"    # Unsecured MQTT for testing
       - "8883:8883"    # TLS MQTT
     volumes:
       - ./mosquitto/config:/mosquitto/config
@@ -19,9 +18,8 @@ services:
     container_name: questdb
     restart: unless-stopped
     ports:
-      - "9000:9000"   # Web UI
-      - "8812:8812"   # Postgres protocol
-      - "9009:9009"   # InfluxDB protocol (optional)
+      - "9000:9000"   # QDB Web-UI
+      - "8812:8812"   # PostgreSQL protocol
     volumes:
       - ./questdb:/var/lib/questdb
     networks:
@@ -32,7 +30,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     ports:
-      - "3000:3000"  # Grafana Web UI
+      - "3000:3000"  # Grafana Web-UI
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=amirtreq
